@@ -1,0 +1,77 @@
+int verdePin = 13;
+int delaypunto = 200;
+int espacio = 400;
+int delayraya = 600;
+
+// Nuevos tiempos para el pulso lento
+int slowOnTime = 1000;   // LED encendido lento (constante)
+int slowOffTime = 1000;  // LED apagado lento
+
+void setup() {
+  pinMode(verdePin, OUTPUT);  // Inicializa el LED integrado como salida
+}
+
+// Funciones para código Morse (punto y raya)
+void sendDot() {
+  digitalWrite(verdePin, HIGH);
+  delay(delaypunto);
+  digitalWrite(verdePin, LOW);
+  delay(espacio);
+}
+
+void sendDash() {
+  digitalWrite(verdePin, HIGH);
+  delay(delayraya);
+  digitalWrite(verdePin, LOW);
+  delay(espacio);
+}
+
+// Función para enviar el código Morse SOS: ... --- ...
+void sendSOS() {
+  // S: tres puntos
+  sendDot();
+  sendDot();
+  sendDot();
+  delay(espacio * 2); // pausa entre letras
+
+  // O: tres rayas
+  sendDash();
+  sendDash();
+  sendDash();
+  delay(espacio * 2); // pausa entre letras
+
+  // S: tres puntos
+  sendDot();
+  sendDot();
+  sendDot();
+  delay(espacio * 4); // pausa antes de siguiente acción
+}
+
+// Función para hacer 7 pulsos rápidos iguales
+void sendSevenPulses() {
+  for (int i = 0; i < 7; i++) {
+    digitalWrite(verdePin, HIGH);
+    delay(delaypunto);
+    digitalWrite(verdePin, LOW);
+    delay(espacio);
+  }
+}
+
+// Función para hacer 7 pulsos lentos y constantes
+void sendSevenSlowPulses() {
+  for (int i = 0; i < 7; i++) {
+    digitalWrite(verdePin, HIGH);
+    delay(slowOnTime);
+    digitalWrite(verdePin, LOW);
+    delay(slowOffTime);
+  }
+}
+
+void loop() {
+  sendSOS();             // Primero el código Morse SOS
+  sendSevenPulses();     // Luego 7 pulsos rápidos
+  sendSOS();             // Después otra vez el código Morse SOS
+  sendSevenSlowPulses(); // Finalmente 7 pulsos lentos y constantes
+
+  delay(3000);           // Pausa antes de repetir todo el ciclo
+}
