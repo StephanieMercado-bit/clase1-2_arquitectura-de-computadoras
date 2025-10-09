@@ -1,1 +1,26 @@
-morse
+int verdePin = 13;
+int delaypunto=200;
+int espacio=400;
+int delayraya=600;
+
+void setup() {
+  pinMode(verdePin, OUTPUT);  // Inicializa el LED integrado como salida
+}
+
+void loop() {
+  digitalWrite(verdePin, HIGH);
+  delay(delaypunto);
+  digitalWrite(verdePin, LOW);
+  delay(espacio);
+  digitalWrite(verdePin, HIGH);
+  delay(delayraya);
+  digitalWrite(verdePin, LOW);
+  delay(espacio);
+  digitalWrite(verdePin, HIGH);
+  delay(delaypunto);
+  digitalWrite(verdePin, LOW);
+  delay(espacio);
+ 
+
+  digitalWrite(verdePin, LOW);
+  delay(3000);
