@@ -1,0 +1,161 @@
+// ====== CONFIGURACIÓN DE PINES ======
+// LEDs
+const int led1 = A1; // LED del SOS
+const int led2 = A2; // LED del parpadeo de 0.5 s
+const int led3 = 6;  // LED del efecto de brillo (PWM) 
+
+// Botones
+const int button1 = 11;
+const int button2 = 10;
+const int button3 = 8;
+const int buttonStop = 2; // Botón de paro (IRQ)
+
+// ====== VARIABLES ======
+int lastB1 = HIGH;
+int lastB2 = HIGH;
+int lastB3 = HIGH;
+
+volatile bool stopFlag = false; // interrupción
+
+// ======== MEMORIA DE SECUENCIA ========
+volatile int currentSequence = 0;   // 1=SOS, 2=Blink7, 3=Fade
+volatile int currentStep = 0;       // Paso interno donde ocurrió la interrupción
+
+// ====== PROTOTIPOS ======
+void sosSignal(int led);
+void fadeEffect(int led);
+void blinkLed7(int led);
+void stopISR();
+
+// ====== SETUP ======
+void setup() {
+  pinMode(led1, OUTPUT);
+  pinMode(led2, OUTPUT);
+  pinMode(led3, OUTPUT);
+
+  pinMode(button1, INPUT_PULLUP);
+  pinMode(button2, INPUT_PULLUP);
+  pinMode(button3, INPUT_PULLUP);
+  pinMode(buttonStop, INPUT_PULLUP);
+
+  attachInterrupt(digitalPinToInterrupt(buttonStop), stopISR, FALLING);
+
+  Serial.begin(9600);
+}
+
+// ====== LOOP PRINCIPAL ======
+void loop() {
+
+  int b1 = digitalRead(button1);
+  int b2 = digitalRead(button2);
+  int b3 = digitalRead(button3);
+
+  if (b1 == LOW && lastB1 == HIGH) sosSignal(led1);
+  if (b2 == LOW && lastB2 == HIGH) blinkLed7(led2);
+  if (b3 == LOW && lastB3 == HIGH) fadeEffect(led3);
+
+  lastB1 = b1;
+  lastB2 = b2;
+  lastB3 = b3;
+}
+
+// ====== FUNCIONES ======
+
+// ---- INTERRUPCIÓN ----
+void stopISR() {
+  stopFlag = true;
+}
+
+// ---- 1) SOS ... --- ... ----
+void sosSignal(int led) {
+
+  stopFlag = false;
+  currentSequence = 1; // Guardar tipo de secuencia
+
+  // Tres puntos
+  for (int i = 0; i < 3 && !stopFlag; i++) {
+    currentStep = i;           // guardar progreso
+    digitalWrite(led, HIGH);
+    delay(200);
+    digitalWrite(led, LOW);
+    delay(200);
+  }
+
+  // Tres rayas
+  for (int i = 0; i < 3 && !stopFlag; i++) {
+    currentStep = 10 + i;      // 10–12 para distinguir esta parte
+    digitalWrite(led, HIGH);
+    delay(600);
+    digitalWrite(led, LOW);
+    delay(200);
+  }
+
+  // Tres puntos finales
+  for (int i = 0; i < 3 && !stopFlag; i++) {
+    currentStep = 20 + i;      // 20–22 para otra parte
+    digitalWrite(led, HIGH);
+    delay(200);
+    digitalWrite(led, LOW);
+    delay(200);
+  }
+
+  digitalWrite(led, LOW);
+
+  if (stopFlag) {
+    Serial.println("Interrumpido durante SOS");
+    Serial.print("Paso: ");
+    Serial.println(currentStep);
+  }
+}
+
+// ---- 2) Parpadeo 7 veces cada 0.5 s ----
+void blinkLed7(int led) {
+
+  stopFlag = false;
+  currentSequence = 2;
+
+  for (int i = 0; i < 7 && !stopFlag; i++) {
+    currentStep = i;
+    digitalWrite(led, HIGH);
+    delay(500);
+    digitalWrite(led, LOW);
+    delay(500);
+  }
+
+  digitalWrite(led, LOW);
+
+  if (stopFlag) {
+    Serial.println("Interrumpido durante Blink7");
+    Serial.print("Paso: ");
+    Serial.println(currentStep);
+  }
+}
+
+// ---- 3) Fade In – Fade Out ----
+void fadeEffect(int led) {
+
+  stopFlag = false;
+  currentSequence = 3;
+
+  // Fade In
+  for (int brillo = 0; brillo <= 255 && !stopFlag; brillo++) {
+    currentStep = brillo; // almacena nivel interno
+    analogWrite(led, brillo);
+    delay(10);
+  }
+
+  // Fade Out
+  for (int brillo = 255; brillo >= 0 && !stopFlag; brillo--) {
+    currentStep = 300 + brillo; // valores 300–555 para distinguir fade out
+    analogWrite(led, brillo);
+    delay(10);
+  }
+
+  analogWrite(led, 0);
+
+  if (stopFlag) {
+    Serial.println("Interrumpido durante Fade");
+    Serial.print("Paso: ");
+    Serial.println(currentStep);
+  }
+}
